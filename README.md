@@ -3,7 +3,8 @@
 ## Description
 ROS 2 workspace for lidar processing. Includes:
 
-- `lidar_py_pkg`: Python ROS 2 nodes for Open3D-based point cloud processing
+- `lidar_py_pkg`: Python ROS 2 nodes
+- `lidar_cpp_pkg`: C++ ROS 2 nodes 
 - `lidar_description`: Contain URDF/xacro file
 - `lidar_bringup`: necessary files to launch multiple nodes
 - SICK lidar driver (`sick_scan_xd`) included as a git submodule
@@ -20,7 +21,7 @@ Copy and paste the following in the terminal to set up the workspace, install de
 # Clone repository with submodules
 mkdir lidar_ws
 cd lidar_ws
-git clone --recurse-submodules git@github.com:HWLs-any/lidar_ros2.git
+git clone --recurse-submodules git@github.com:HWLs-any/lidar-ros2.git
 
 # Install pipenv if not present
 python3 -m pip install --user pipenv
