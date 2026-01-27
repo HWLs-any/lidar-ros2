@@ -1,0 +1,67 @@
+<launch>
+  <arg name="urdf_path" default="$(find-pkg-share lidar_description)/urdf/ship.urdf.xacro"/>
+  <arg name="use_sim_time" default="false"/>
+
+  <arg name="front_ip" default="169.254.254.59"/>
+  <arg name="right_ip" default="169.254.254.53"/>
+  <arg name="back_ip"  default="169.254.254.55"/>
+  <arg name="left_ip"  default="169.254.254.57"/>
+  <arg name="use_binary_protocol" default="True"/>
+
+  <node pkg="robot_state_publisher" exec="robot_state_publisher" name="robot_state_publisher" output="screen">
+    <param name="robot_description" value="$(command 'xacro $(var urdf_path)')"/>
+    <param name="use_sim_time" value="$(var use_sim_time)"/>
+  </node>
+
+  <node pkg="sick_scan_xd" exec="sick_generic_caller" name="front_driver" output="screen"
+        args="$(find-pkg-share sick_scan_xd)/launch/sick_mrs_6xxx.launch hostname:=$(var front_ip) nodename:=front frame_id:=f_lidar_link cloud_topic:=/front/cloud laserscan_topic:=/front/scan imu_topic:=/front/imu tf_publish_rate:=0 use_binary_protocol:=$(var use_binary_protocol)"/>
+  <node pkg="sick_scan_xd" exec="sick_generic_caller" name="right_driver" output="screen"
+        args="$(find-pkg-share sick_scan_xd)/launch/sick_mrs_6xxx.launch hostname:=$(var right_ip) nodename:=right frame_id:=r_lidar_link cloud_topic:=/right/cloud laserscan_topic:=/right/scan imu_topic:=/right/imu tf_publish_rate:=0 use_binary_protocol:=$(var use_binary_protocol)"/>
+  <node pkg="sick_scan_xd" exec="sick_generic_caller" name="back_driver" output="screen"
+        args="$(find-pkg-share sick_scan_xd)/launch/sick_mrs_6xxx.launch hostname:=$(var back_ip) nodename:=back frame_id:=b_lidar_link cloud_topic:=/back/cloud laserscan_topic:=/back/scan imu_topic:=/back/imu tf_publish_rate:=0 use_binary_protocol:=$(var use_binary_protocol)"/>
+  <node pkg="sick_scan_xd" exec="sick_generic_caller" name="left_driver" output="screen"
+        args="$(find-pkg-share sick_scan_xd)/launch/sick_mrs_6xxx.launch hostname:=$(var left_ip) nodename:=left frame_id:=l_lidar_link cloud_topic:=/left/cloud laserscan_topic:=/left/scan imu_topic:=/left/imu tf_publish_rate:=0 use_binary_protocol:=$(var use_binary_protocol)"/>
+
+  <node pkg="lidar_py_pkg" exec="cloud_fusion" name="cloud_fusion" output="screen">
+    <param name="input_topics" value="[/front/cloud, /right/cloud, /back/cloud, /left/cloud]"/>
+    <param name="target_frame" value="base_link"/>
+    <param name="voxel_size" value="0.05"/>
+    <param name="max_age_sec" value="0.5"/>
+    <param name="publish_topic" value="/nova/cloud_fused"/>
+    <param name="publish_rate_hz" value="10.0"/>
+  </node>
+
+  <node pkg="lidar_py_pkg" exec="cloud_detector" name="cloud_detector" output="screen">
+    <param name="input_topic" value="/nova/cloud_fused"/>
+    <param name="marker_topic" value="/nova/detections"/>
+    <param name="target_frame" value="base_link"/>
+    <param name="min_z" value="-0.2"/>
+    <param name="max_z" value="2.0"/>
+    <param name="voxel_size" value="0.05"/>
+    <param name="cluster_eps" value="0.4"/>
+    <param name="cluster_min_pts" value="20"/>
+  </node>
+
+  <!-- C++ nodes (commented out for later) -->
+  <!--
+  <node pkg="lidar_cpp_pkg" exec="cloud_monitor" name="front_cloud_monitor" output="screen">
+    <param name="cloud_topic" value="/front/cloud"/>
+    <param name="log_hz" value="1.0"/>
+    <param name="expected_frame_id" value="f_lidar_link"/>
+  </node>
+
+  <node pkg="lidar_cpp_pkg" exec="cloud_filter" name="front_cloud_filter" output="screen">
+    <param name="input_topic" value="/front/cloud"/>
+    <param name="output_topic" value="/front/cloud_filtered"/>
+    <param name="min_range" value="0.5"/>
+    <param name="max_range" value="80.0"/>
+    <param name="min_z" value="-0.2"/>
+    <param name="max_z" value="2.0"/>
+    <param name="voxel_size" value="0.05"/>
+  </node>
+  -->
+
+  <node pkg="rviz2" exec="rviz2" name="rviz2" output="screen">
+    <param name="use_sim_time" value="$(var use_sim_time)"/>
+  </node>
+</launch>
