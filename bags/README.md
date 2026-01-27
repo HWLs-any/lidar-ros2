@@ -1,2 +1,10 @@
-Store rosbag recordings here locally.
-This folder is ignored by git except this README.
+# ROS 2 bags
+
+This repo does NOT store bag data in git (bags are large).
+Put your recordings in:
+- bags/raw/        (direct recordings)
+- bags/processed/  (cropped/filtered bags)
+- bags/docs/       (notes, screenshots, metadata)
+
+Recording commands are in this README.
+EOF

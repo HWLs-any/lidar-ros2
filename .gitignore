@@ -48,6 +48,7 @@ Thumbs.db
 ############################
 bags/**
 !bags/README.md
+!bags/docs/**
 
 ############################
 # CMake / build leftovers
