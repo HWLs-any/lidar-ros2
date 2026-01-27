@@ -1,65 +1,32 @@
-############################
-# ROS 2 / colcon
-############################
+# colcon
 build/
 install/
 log/
 
-############################
-# Python
-############################
+# pipenv / python
+.venv/
 __pycache__/
-*.py[cod]
-*.so
-*.egg-info/
-.eggs/
+*.pyc
+*.pyo
+*.pyd
 .pytest_cache/
 .mypy_cache/
-coverage/
 
-############################
-# Virtual environments
-############################
-.venv/
-.env
-
-############################
-# Pipenv
-############################
-# Pipfile and Pipfile.lock MUST be committed
-# (so nothing to ignore here)
-
-############################
-# Editors / IDEs
-############################
+# IDE
 .vscode/
 .idea/
 *.swp
-*.swo
+*~
 
-############################
-# OS files
-############################
+# OS
 .DS_Store
-Thumbs.db
 
-############################
-# ROS bags / sensor data
-############################
-bags/**
-!bags/README.md
-!bags/docs/**
+# ROS
+.ros/
 
-############################
-# CMake / build leftovers
-############################
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
-Makefile
-
-############################
-# Logs / runtime junk
-############################
-*.log
+# Bags (do NOT commit big data)
+bags/
+*.db3
+*.sqlite3
+*.mcap
 

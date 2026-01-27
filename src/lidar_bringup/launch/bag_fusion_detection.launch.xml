@@ -1,16 +1,15 @@
 <launch>
-  <!-- ===================== -->
-  <!-- User-configurable args -->
-  <!-- ===================== -->
+  <!-- ============== -->
+  <!-- User arguments -->
+  <!-- ============== -->
   <arg name="bag_path" default="/home/a-s/lidar_ws/bags/raw/bag_all_2026-01-15_14-21-44"/>
   <arg name="use_sim_time" default="true"/>
 
   <arg name="urdf_path" default="$(find-pkg-share lidar_description)/urdf/ship.urdf.xacro"/>
 
-  <!-- RViz config is optional; you can save later and set this -->
-  <arg name="rviz_config" default=""/>
+  <!-- Use repo-tracked RViz config by default -->
+  <arg name="rviz_config" default="$(find-pkg-share lidar_bringup)/../../../../rviz/bag_compare.rviz"/>
 
-  <!-- Bag play options -->
   <arg name="bag_rate" default="1.0"/>
   <arg name="bag_loop" default="false"/>
 
@@ -43,6 +42,8 @@
     <param name="marker_topic" value="/cpp/fused/detections"/>
     <param name="target_frame" value="base_link"/>
 
+    <param name="tf_timeout_sec" value="0.2"/>
+
     <param name="voxel_leaf" value="0.05"/>
     <param name="sor_mean_k" value="20"/>
     <param name="sor_stddev" value="1.0"/>
@@ -61,12 +62,13 @@
   </node>
 
   <!-- ===================== -->
-  <!-- Algorithm A (C++ PCL) per-sensor (debug quality of fusion) -->
+  <!-- Algorithm A (C++ PCL) per-sensor -->
   <!-- ===================== -->
   <node pkg="lidar_cpp_pkg" exec="object_detector_pcl" name="detector_cpp_front" output="screen">
     <param name="input_topic" value="/front/cloud"/>
     <param name="marker_topic" value="/cpp/front/detections"/>
     <param name="target_frame" value="base_link"/>
+    <param name="tf_timeout_sec" value="0.2"/>
     <param name="marker_lifetime_sec" value="0.5"/>
   </node>
 
@@ -74,6 +76,7 @@
     <param name="input_topic" value="/right/cloud"/>
     <param name="marker_topic" value="/cpp/right/detections"/>
     <param name="target_frame" value="base_link"/>
+    <param name="tf_timeout_sec" value="0.2"/>
     <param name="marker_lifetime_sec" value="0.5"/>
   </node>
 
@@ -81,6 +84,7 @@
     <param name="input_topic" value="/back/cloud"/>
     <param name="marker_topic" value="/cpp/back/detections"/>
     <param name="target_frame" value="base_link"/>
+    <param name="tf_timeout_sec" value="0.2"/>
     <param name="marker_lifetime_sec" value="0.5"/>
   </node>
 
@@ -88,11 +92,12 @@
     <param name="input_topic" value="/left/cloud"/>
     <param name="marker_topic" value="/cpp/left/detections"/>
     <param name="target_frame" value="base_link"/>
+    <param name="tf_timeout_sec" value="0.2"/>
     <param name="marker_lifetime_sec" value="0.5"/>
   </node>
 
   <!-- ===================== -->
-  <!-- Algorithm B (Python DBSCAN) on FUSED (comparison) -->
+  <!-- Algorithm B (Python DBSCAN) on FUSED -->
   <!-- ===================== -->
   <node pkg="lidar_py_pkg" exec="cloud_detector" name="detector_py_fused" output="screen">
     <param name="input_topic" value="/nova/cloud_fused"/>
@@ -109,17 +114,15 @@
   <!-- ===================== -->
   <!-- Bag playback -->
   <!-- ===================== -->
-  <executable cmd="ros2 bag play $(var bag_path) --clock --rate $(var bag_rate)" output="screen"/>
-
-  <!-- Optional loop: comment above line and use this instead if you want looping
+  <!-- Default: no loop -->
+ 
   <executable cmd="ros2 bag play $(var bag_path) --clock --rate $(var bag_rate) --loop" output="screen"/>
-  -->
+ 
 
   <!-- ===================== -->
-  <!-- RViz -->
+  <!-- RViz (loads your saved config) -->
   <!-- ===================== -->
-  <!-- If rviz_config is empty, RViz opens with default -->
-  <node pkg="rviz2" exec="rviz2" name="rviz2" output="screen" args="$(var rviz_config)">
+  <node pkg="rviz2" exec="rviz2" name="rviz2" output="screen" args="-d $(var rviz_config)">
     <param name="use_sim_time" value="$(var use_sim_time)"/>
   </node>
 </launch>
