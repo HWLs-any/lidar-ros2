@@ -1,24 +1,64 @@
-# colcon
+############################
+# ROS 2 / colcon
+############################
 build/
 install/
 log/
 
+############################
 # Python
+############################
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+*.so
 *.egg-info/
 .eggs/
 .pytest_cache/
+.mypy_cache/
+coverage/
 
-# venv
+############################
+# Virtual environments
+############################
 .venv/
+.env
 
-# OS / editors
-.DS_Store
+############################
+# Pipenv
+############################
+# Pipfile and Pipfile.lock MUST be committed
+# (so nothing to ignore here)
+
+############################
+# Editors / IDEs
+############################
 .vscode/
 .idea/
+*.swp
+*.swo
 
-# Bags (keep folder but ignore data)
+############################
+# OS files
+############################
+.DS_Store
+Thumbs.db
+
+############################
+# ROS bags / sensor data
+############################
 bags/**
 !bags/README.md
+
+############################
+# CMake / build leftovers
+############################
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+############################
+# Logs / runtime junk
+############################
+*.log
+

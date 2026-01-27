@@ -7,6 +7,10 @@ name = "pypi"
 numpy = "*"
 scikit-learn = "*"
 open3d = "*"
+lark = "*"
+pyyaml = "*"
+empy = "*"
+catkin-pkg = "*"
 
 [dev-packages]
 
