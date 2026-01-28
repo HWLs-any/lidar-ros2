@@ -159,5 +159,3 @@ pipenv run ros2 launch lidar_bringup live_fusion_detection.launch.xml \
 
 You can change `bag_path` to any other recorded bag location.
 
-```
-
