@@ -1,123 +1,163 @@
-# lidar_ws
+# Multi-LiDAR Perception Pipeline (ROS 2)
 
-## Description
-ROS 2 workspace for lidar processing. Includes:
-
-- `lidar_py_pkg`: Python ROS 2 nodes
-- `lidar_cpp_pkg`: C++ ROS 2 nodes 
-- `lidar_description`: Contain URDF/xacro file
-- `lidar_bringup`: necessary files to launch multiple nodes
-- SICK lidar driver (`sick_scan_xd`) included as a git submodule
-
-This workspace is fully reproducible with pipenv and supports Ubuntu 24.04 + ROS 2 Jazzy + Python 3.12.
+## Main Goal
+Build a **reproducible, modular ROS 2 perception pipeline** for a **fixed-mounted multi-LiDAR setup**, enabling:
+- **Time/TF-aligned fusion** of multiple LiDAR point clouds into a common frame
+- **Object detection (clustering)** on both **per-sensor** and **fused** point clouds
+- **Clear RViz visualization** for qualitative evaluation and debugging
 
 ---
 
-## Super compact one-block setup script
+## What the Code Does (Current Status)
 
-Copy and paste the following in the terminal to set up the workspace, install dependencies, and build:
+### Input
+- Four independent `PointCloud2` topics:
+  - `/front/cloud`, `/right/cloud`, `/back/cloud`, `/left/cloud`
+
+### Core Pipeline
+1. **TF / Frames**
+   - `lidar_description` provides a URDF/Xacro with fixed sensor frames
+   - `robot_state_publisher` publishes TF for consistent transforms
+
+2. **Fusion (Python) — `lidar_py_pkg/cloud_fusion`**
+   - Subscribes to all four point cloud topics
+   - Transforms each cloud into a shared `target_frame` (default: `base_link`)
+   - Applies voxel-based de-duplication
+   - Publishes the fused cloud:
+     - `/nova/cloud_fused`
+
+3. **Object Detection / Clustering (two algorithms)**
+   - **C++ / PCL — `lidar_cpp_pkg/object_detector_pcl`**
+     - Voxel downsampling
+     - Statistical outlier removal
+     - Plane segmentation (RANSAC) for ground removal
+     - Euclidean clustering
+     - Publishes `MarkerArray` bounding boxes for RViz
+     - Supports **metrics output** (latency, detections count, etc.)
+   - **Python / DBSCAN — `lidar_py_pkg/cloud_detector`**
+     - Optional voxel downsample
+     - DBSCAN clustering
+     - Publishes `MarkerArray` bounding boxes for RViz
+
+### Visualization
+- RViz shows:
+  - Per-sensor point clouds
+  - Fused cloud
+  - Bounding-box markers from C++ and Python detectors
+  - TF frames
+
+---
+
+## Repository Structure
+```
+
+lidar_ws/
+├── Pipfile
+├── Pipfile.lock
+├── src/
+│   ├── lidar_py_pkg/          # Python ROS 2 nodes (fusion, DBSCAN detector, utilities)
+│   ├── lidar_cpp_pkg/         # C++ ROS 2 nodes (PCL detector + metrics)
+│   ├── lidar_description/     # URDF/Xacro (frames)
+│   ├── lidar_bringup/         # XML launch files
+│   └── sick_scan_xd/          # (optional) SICK driver submodule for live operation
+├── rviz/                      # Saved RViz configs
+└── bags/                      # (optional) ros2 bag recordings (not required for build)
+
+````
+
+---
+
+## Requirements
+- **Ubuntu 24.04**
+- **ROS 2 Jazzy**
+- **Python 3.12**
+- **colcon**
+- **pipenv**
+- **PCL (system packages)**
+- **sick_scan_xd (for live Lidar data)**
+
+
+---
+
+## Install / Clone
+
+### 1) Install system dependencies
+```bash
+sudo apt update
+sudo apt install -y \
+  python3-pip python3-venv \
+  direnv \
+  git \
+  python3-colcon-common-extensions \
+  ros-jazzy-robot-state-publisher \
+  ros-jazzy-tf2-ros ros-jazzy-tf2-sensor-msgs \
+  ros-jazzy-pcl-conversions \
+  libpcl-dev
+````
+Most of them are already comes with ros-jazzy standard installation
+
+### 2) Install pipenv
 
 ```bash
-# Clone repository with submodules
-mkdir lidar_ws
-cd lidar_ws
-git clone --recurse-submodules git@github.com:HWLs-any/lidar-ros2.git
-
-# Install pipenv if not present
 python3 -m pip install --user pipenv
-export PATH="$HOME/.local/bin:$PATH"
-
-# Install Python dependencies
-pipenv install
-
-# Source ROS 2 environment
-source /opt/ros/jazzy/setup.bash
-
-# Build workspace with symlink install
-pipenv run colcon build --symlink-install
-source install/setup.bash
-
-# Verify lidar_py_pkg node exists
-ros2 pkg executables lidar_py_pkg
-```
-After running this block, the workspace is ready to run ROS 2 nodes.
-
-Step-by-step setup instructions
-1. Clone repository with submodules
-```
-git clone --recurse-submodules git@github.com:HWLs-any/Lidar_ros2.git
 ```
 
-If cloned without --recurse-submodules:
+(Optional but recommended: keep venv inside the repo)
+
+```bash
+echo 'export PIPENV_VENV_IN_PROJECT=1' >> ~/.bashrc
+source ~/.bashrc
 ```
+
+### 3) Clone the repo
+
+```bash
+cd ~
+git clone git@github.com:HWLs-any/lidar-ros2.git
+cd lidar-ros2
+```
+
+If you use `sick_scan_xd` as a submodule (for live sensors):
+
+```bash
 git submodule update --init --recursive
 ```
 
-2. Install pipenv
-```
-cd lidar_ws
-python3 -m pip install --user pipenv
-export PATH="$HOME/.local/bin:$PATH"
+---
+
+## Python Environment (pipenv)
+
+Create / install dependencies from `Pipfile.lock`:
+
+```bash
+cd ~/lidar-ros2
+pipenv sync --dev
 ```
 
-3. Install Python dependencies
-```
-pipenv install numpy scikit-learn open3d colcon-common-extensions
-```
-Installs numpy, scikit-learn, open3d, colcon-common-extensions
-Virtual environment is created in ~/.local/share/virtualenvs/...
+---
 
-4. Activate environment and ROS 2
-Option A — Using direnv (if .envrc exists)
-```
-direnv allow
-```
+## Build (ROS 2 + pipenv)
 
-Option B — Manual activation
-```
+```bash
+cd ~/lidar-ros2
 source /opt/ros/jazzy/setup.bash
-pipenv shell
-```
-Python interpreter points to the pipenv environment
-ROS 2 environment is sourced
-
-5. Build workspace with symlink install
-```
-cd ~/lidar_ws
 pipenv run colcon build --symlink-install
 source install/setup.bash
 ```
---symlink-install ensures Python changes are reflected immediately
 
-6. Verify ROS 2 packages
-```
-ros2 pkg list | grep lidar_py_pkg
-ros2 pkg executables lidar_py_pkg
-```
-lidar_py_pkg and node plane_remove_o3d should be listed
+---
 
+## Run with ROS 2 bag playback
 
-7. Run a ROS 2 node
-```
-ros2 run lidar_py_pkg plane_remove_o3d \
-  --ros-args -p input_topic:=/nova/cloud_fused \
-             -p output_topic:=/nova/cloud_ground_removed \
-             -p distance_thresh:=0.05
-```
-Node subscribes to /nova/cloud_fused and publishes filtered points to /nova/cloud_ground_removed
+After building and sourcing, run:
 
-8. Run SICK lidar driver(test)
+```bash
+pipenv run ros2 launch lidar_bringup live_fusion_detection.launch.xml \
+  bag_path:=/home/a-s/lidar_ws/bags/raw/bag_all_2026-01-15_14-21-44 \
+  use_sim_time:=true
 ```
-ros2 run sick_scan_xd sick_generic_node
-```
-Ensure SICK lidar is connected
-Submodules are initialized and updated
 
-9. Update workspace later
+You can change `bag_path` to any other recorded bag location.
+
 ```
-git pull
-git submodule update --init --recursive
-pipenv run colcon build --symlink-install
-source install/setup.bash
-```
-Pulls updates from GitHub, updates submodules, rebuilds workspace
+

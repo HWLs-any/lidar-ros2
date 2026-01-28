@@ -11,6 +11,8 @@
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "visualization_msgs/msg/marker.hpp"
 #include "builtin_interfaces/msg/duration.hpp"
+#include "std_msgs/msg/int32.hpp"
+#include "std_msgs/msg/float32.hpp"
 
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
@@ -43,6 +45,10 @@ public:
     declare_parameter<std::string>("marker_topic", "/cpp/detections");
     declare_parameter<std::string>("target_frame", "base_link");
 
+    // Metrics
+    declare_parameter<std::string>("metrics_prefix", "/cpp/metrics");
+    declare_parameter<bool>("publish_metrics", true);
+
     // TF
     declare_parameter<double>("tf_timeout_sec", 0.2);
 
@@ -71,6 +77,9 @@ public:
     marker_topic_ = get_parameter("marker_topic").as_string();
     target_frame_ = get_parameter("target_frame").as_string();
 
+    metrics_prefix_ = get_parameter("metrics_prefix").as_string();
+    metrics_enabled_ = get_parameter("publish_metrics").as_bool();
+
     tf_timeout_sec_ = std::max(0.0, get_parameter("tf_timeout_sec").as_double());
 
     voxel_leaf_ = get_parameter("voxel_leaf").as_double();
@@ -96,9 +105,16 @@ public:
 
     pub_markers_ = create_publisher<visualization_msgs::msg::MarkerArray>(marker_topic_, 10);
 
+    if (metrics_enabled_) {
+      pub_count_ = create_publisher<std_msgs::msg::Int32>(metrics_prefix_ + "/detections_count", 10);
+      pub_ms_ = create_publisher<std_msgs::msg::Float32>(metrics_prefix_ + "/processing_ms", 10);
+      pub_points_ = create_publisher<std_msgs::msg::Int32>(metrics_prefix_ + "/points_in", 10);
+    }
+
     RCLCPP_INFO(get_logger(),
-      "object_detector_pcl input=%s markers=%s target_frame=%s tf_timeout=%.2f",
-      input_topic_.c_str(), marker_topic_.c_str(), target_frame_.c_str(), tf_timeout_sec_);
+      "object_detector_pcl input=%s markers=%s target_frame=%s metrics=%s prefix=%s",
+      input_topic_.c_str(), marker_topic_.c_str(), target_frame_.c_str(),
+      metrics_enabled_ ? "on" : "off", metrics_prefix_.c_str());
   }
 
 private:
@@ -122,6 +138,13 @@ private:
     return d;
   }
 
+  static float elapsed_ms_(const std::chrono::steady_clock::time_point & t0)
+  {
+    const auto t1 = std::chrono::steady_clock::now();
+    const std::chrono::duration<double, std::milli> dt = t1 - t0;
+    return static_cast<float>(dt.count());
+  }
+
   bool transform_cloud_to_target_(
     const sensor_msgs::msg::PointCloud2 & in,
     sensor_msgs::msg::PointCloud2 & out)
@@ -142,7 +165,6 @@ private:
       out.header.frame_id = target_frame_;
       return true;
     } catch (const std::exception & e) {
-      // Fallback: try latest transform
       try {
         const auto tf = tf_buffer_.lookupTransform(target_frame_, in.header.frame_id, tf2::TimePointZero);
         tf2::doTransform(in, out, tf);
@@ -158,26 +180,50 @@ private:
     }
   }
 
+  void publish_metrics_msgs_(int points_in, int detections, float ms)
+  {
+    if (!metrics_enabled_) return;
+
+    std_msgs::msg::Int32 c; c.data = detections;
+    std_msgs::msg::Float32 t; t.data = ms;
+    std_msgs::msg::Int32 p; p.data = points_in;
+
+    pub_count_->publish(c);
+    pub_ms_->publish(t);
+    pub_points_->publish(p);
+  }
+
+  void publish_empty_markers_()
+  {
+    visualization_msgs::msg::MarkerArray out;
+    pub_markers_->publish(out);
+  }
+
   void on_cloud(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
   {
+    const auto t0 = std::chrono::steady_clock::now();
+
     sensor_msgs::msg::PointCloud2 cloud_in_target;
     if (!transform_cloud_to_target_(*msg, cloud_in_target)) {
       publish_empty_markers_();
+      publish_metrics_msgs_(0, 0, 0.0f);
       return;
     }
 
-    // Convert ROS -> PCL
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_in(new pcl::PointCloud<pcl::PointXYZI>());
     try {
       pcl::fromROSMsg(cloud_in_target, *cloud_in);
     } catch (...) {
       RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 3000, "Failed to convert PointCloud2 to PCL cloud.");
       publish_empty_markers_();
+      publish_metrics_msgs_(0, 0, 0.0f);
       return;
     }
 
+    const int points_in = static_cast<int>(cloud_in->size());
     if (!cloud_in || cloud_in->empty()) {
       publish_empty_markers_();
+      publish_metrics_msgs_(points_in, 0, elapsed_ms_(t0));
       return;
     }
 
@@ -195,6 +241,7 @@ private:
 
     if (cloud_z->empty()) {
       publish_empty_markers_();
+      publish_metrics_msgs_(points_in, 0, elapsed_ms_(t0));
       return;
     }
 
@@ -211,6 +258,7 @@ private:
 
     if (!cloud_ds || cloud_ds->empty()) {
       publish_empty_markers_();
+      publish_metrics_msgs_(points_in, 0, elapsed_ms_(t0));
       return;
     }
 
@@ -226,6 +274,7 @@ private:
 
     if (!cloud_f || cloud_f->empty()) {
       publish_empty_markers_();
+      publish_metrics_msgs_(points_in, 0, elapsed_ms_(t0));
       return;
     }
 
@@ -258,6 +307,7 @@ private:
 
     if (!cloud_nonground || cloud_nonground->empty()) {
       publish_empty_markers_();
+      publish_metrics_msgs_(points_in, 0, elapsed_ms_(t0));
       return;
     }
 
@@ -334,21 +384,20 @@ private:
 
     pub_markers_->publish(out);
 
-    RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 2000,
-      "PCL detector (%s): input=%zu nonground=%zu clusters=%zu frame=%s->%s",
-      input_topic_.c_str(), cloud_in->size(), cloud_nonground->size(), out.markers.size(),
-      msg->header.frame_id.c_str(), target_frame_.c_str());
-  }
+    const float ms = elapsed_ms_(t0);
+    publish_metrics_msgs_(points_in, static_cast<int>(out.markers.size()), ms);
 
-  void publish_empty_markers_()
-  {
-    visualization_msgs::msg::MarkerArray out;
-    pub_markers_->publish(out);
+    RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 2000,
+      "PCL detector (%s): points=%d clusters=%zu time=%.2fms",
+      input_topic_.c_str(), points_in, out.markers.size(), ms);
   }
 
   std::string input_topic_;
   std::string marker_topic_;
   std::string target_frame_;
+
+  std::string metrics_prefix_;
+  bool metrics_enabled_;
 
   double tf_timeout_sec_;
 
@@ -372,6 +421,10 @@ private:
 
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr sub_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pub_markers_;
+
+  rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr pub_count_;
+  rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr pub_ms_;
+  rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr pub_points_;
 };
 
 int main(int argc, char ** argv)

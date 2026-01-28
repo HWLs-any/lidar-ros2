@@ -11,7 +11,6 @@
   <arg name="rviz_config" default="$(find-pkg-share lidar_bringup)/../../../../rviz/bag_compare.rviz"/>
 
   <arg name="bag_rate" default="1.0"/>
-  <arg name="bag_loop" default="false"/>
 
   <!-- ===================== -->
   <!-- TF: robot_state_publisher -->
@@ -42,6 +41,10 @@
     <param name="marker_topic" value="/cpp/fused/detections"/>
     <param name="target_frame" value="base_link"/>
 
+    <!-- metrics -->
+    <param name="publish_metrics" value="true"/>
+    <param name="metrics_prefix" value="/metrics/cpp/fused"/>
+
     <param name="tf_timeout_sec" value="0.2"/>
 
     <param name="voxel_leaf" value="0.05"/>
@@ -68,6 +71,11 @@
     <param name="input_topic" value="/front/cloud"/>
     <param name="marker_topic" value="/cpp/front/detections"/>
     <param name="target_frame" value="base_link"/>
+
+    <!-- metrics -->
+    <param name="publish_metrics" value="true"/>
+    <param name="metrics_prefix" value="/metrics/cpp/front"/>
+
     <param name="tf_timeout_sec" value="0.2"/>
     <param name="marker_lifetime_sec" value="0.5"/>
   </node>
@@ -76,6 +84,11 @@
     <param name="input_topic" value="/right/cloud"/>
     <param name="marker_topic" value="/cpp/right/detections"/>
     <param name="target_frame" value="base_link"/>
+
+    <!-- metrics -->
+    <param name="publish_metrics" value="true"/>
+    <param name="metrics_prefix" value="/metrics/cpp/right"/>
+
     <param name="tf_timeout_sec" value="0.2"/>
     <param name="marker_lifetime_sec" value="0.5"/>
   </node>
@@ -84,6 +97,11 @@
     <param name="input_topic" value="/back/cloud"/>
     <param name="marker_topic" value="/cpp/back/detections"/>
     <param name="target_frame" value="base_link"/>
+
+    <!-- metrics -->
+    <param name="publish_metrics" value="true"/>
+    <param name="metrics_prefix" value="/metrics/cpp/back"/>
+
     <param name="tf_timeout_sec" value="0.2"/>
     <param name="marker_lifetime_sec" value="0.5"/>
   </node>
@@ -92,6 +110,11 @@
     <param name="input_topic" value="/left/cloud"/>
     <param name="marker_topic" value="/cpp/left/detections"/>
     <param name="target_frame" value="base_link"/>
+
+    <!-- metrics -->
+    <param name="publish_metrics" value="true"/>
+    <param name="metrics_prefix" value="/metrics/cpp/left"/>
+
     <param name="tf_timeout_sec" value="0.2"/>
     <param name="marker_lifetime_sec" value="0.5"/>
   </node>
@@ -114,10 +137,7 @@
   <!-- ===================== -->
   <!-- Bag playback -->
   <!-- ===================== -->
-  <!-- Default: no loop -->
- 
   <executable cmd="ros2 bag play $(var bag_path) --clock --rate $(var bag_rate) --loop" output="screen"/>
- 
 
   <!-- ===================== -->
   <!-- RViz (loads your saved config) -->
