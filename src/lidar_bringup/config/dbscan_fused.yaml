@@ -1,0 +1,10 @@
+detector_py_fused:
+  ros__parameters:
+    input_topic: /nova/cloud_fused
+    marker_topic: /detections/dbscan/fused
+    target_frame: base_link
+    min_z: -0.2
+    max_z: 2.0
+    voxel_size: 0.05
+    cluster_eps: 0.40
+    cluster_min_pts: 20

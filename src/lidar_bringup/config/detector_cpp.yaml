@@ -1,0 +1,23 @@
+detector_cpp:
+  ros__parameters:
+    voxel_leaf: 0.05
+
+    min_z: -0.5
+    max_z: 3.0
+
+    cluster_tolerance: 0.35
+    cluster_min_size: 20
+    cluster_max_size: 200000
+
+    plane_dist_thresh: 0.05
+    plane_max_iter: 150
+
+    sor_mean_k: 20
+    sor_stddev: 1.0
+
+    tf_timeout_sec: 0.2
+    marker_lifetime_sec: 0.5
+
+    publish_metrics: true
+    target_frame: base_link
+    start_type_description_service: true

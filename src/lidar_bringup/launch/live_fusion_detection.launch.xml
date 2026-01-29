@@ -6,8 +6,9 @@
   <arg name="bag_rate" default="1.0"/>
   <arg name="use_sim_time" default="true"/>
 
+  <arg name="config_dir" default="$(find-pkg-share lidar_bringup)/config"/>
   <arg name="urdf_path" default="$(find-pkg-share lidar_description)/urdf/ship.urdf.xacro"/>
-  <arg name="rviz_config" default="$(find-pkg-share lidar_bringup)/../../../../rviz/bag_compare.rviz"/>
+  <arg name="rviz_config" default="$(find-pkg-share lidar_bringup)/rviz/bag_compare.rviz"/>
 
   <!-- ========================= -->
   <!-- Robot TF via URDF (xacro) -->
@@ -21,100 +22,74 @@
   <!-- Fusion (Python)       -->
   <!-- ===================== -->
   <node pkg="lidar_py_pkg" exec="cloud_fusion" name="cloud_fusion" output="screen">
-    <param name="input_topics" value="[/front/cloud, /right/cloud, /back/cloud, /left/cloud]"/>
-    <param name="target_frame" value="base_link"/>
-    <param name="voxel_size" value="0.05"/>
-    <param name="max_age_sec" value="0.5"/>
-    <param name="publish_topic" value="/nova/cloud_fused"/>
-    <param name="publish_rate_hz" value="10.0"/>
+    <param from="$(var config_dir)/fusion.yaml"/>
     <param name="use_sim_time" value="$(var use_sim_time)"/>
   </node>
 
-  <!-- ================================ -->
-  <!-- Algorithm A: C++ PCL on FUSED    -->
-  <!-- ================================ -->
+  <!-- ================================== -->
+  <!-- Algorithm A: C++ PCL detector       -->
+  <!-- Base params from YAML, per-instance -->
+  <!-- ================================== -->
+
+  <!-- FUSED -->
   <node pkg="lidar_cpp_pkg" exec="object_detector_pcl" name="detector_cpp_fused" output="screen">
+    <param from="$(var config_dir)/detector_cpp.yaml"/>
+    <param name="use_sim_time" value="$(var use_sim_time)"/>
+
     <param name="input_topic" value="/nova/cloud_fused"/>
-    <param name="marker_topic" value="/cpp/fused/detections"/>
-    <param name="target_frame" value="base_link"/>
+    <param name="marker_topic" value="/detections/pcl/fused"/>
+    <param name="metrics_prefix" value="/metrics/pcl/fused"/>
 
-    <param name="publish_metrics" value="true"/>
-    <param name="metrics_prefix" value="/metrics/cpp/fused"/>
-
-    <param name="tf_timeout_sec" value="0.2"/>
-    <param name="voxel_leaf" value="0.05"/>
-    <param name="sor_mean_k" value="20"/>
-    <param name="sor_stddev" value="1.0"/>
-
-    <param name="plane_dist_thresh" value="0.05"/>
-    <param name="plane_max_iter" value="150"/>
-
-    <param name="cluster_tolerance" value="0.35"/>
-    <param name="cluster_min_size" value="20"/>
-    <param name="cluster_max_size" value="200000"/>
-
+    <!-- Fused-specific cropping (keeps your previous behavior) -->
     <param name="min_z" value="-0.2"/>
     <param name="max_z" value="2.0"/>
-
-    <param name="marker_lifetime_sec" value="0.5"/>
   </node>
 
-  <!-- ================================== -->
-  <!-- Algorithm A: C++ PCL per-sensor     -->
-  <!-- (minimal params; inherits defaults) -->
-  <!-- ================================== -->
+  <!-- FRONT -->
   <node pkg="lidar_cpp_pkg" exec="object_detector_pcl" name="detector_cpp_front" output="screen">
+    <param from="$(var config_dir)/detector_cpp.yaml"/>
+    <param name="use_sim_time" value="$(var use_sim_time)"/>
+
     <param name="input_topic" value="/front/cloud"/>
-    <param name="marker_topic" value="/cpp/front/detections"/>
-    <param name="target_frame" value="base_link"/>
-    <param name="publish_metrics" value="true"/>
-    <param name="metrics_prefix" value="/metrics/cpp/front"/>
-    <param name="tf_timeout_sec" value="0.2"/>
-    <param name="marker_lifetime_sec" value="0.5"/>
+    <param name="marker_topic" value="/detections/pcl/front"/>
+    <param name="metrics_prefix" value="/metrics/pcl/front"/>
   </node>
 
+  <!-- RIGHT -->
   <node pkg="lidar_cpp_pkg" exec="object_detector_pcl" name="detector_cpp_right" output="screen">
+    <param from="$(var config_dir)/detector_cpp.yaml"/>
+    <param name="use_sim_time" value="$(var use_sim_time)"/>
+
     <param name="input_topic" value="/right/cloud"/>
-    <param name="marker_topic" value="/cpp/right/detections"/>
-    <param name="target_frame" value="base_link"/>
-    <param name="publish_metrics" value="true"/>
-    <param name="metrics_prefix" value="/metrics/cpp/right"/>
-    <param name="tf_timeout_sec" value="0.2"/>
-    <param name="marker_lifetime_sec" value="0.5"/>
+    <param name="marker_topic" value="/detections/pcl/right"/>
+    <param name="metrics_prefix" value="/metrics/pcl/right"/>
   </node>
 
+  <!-- BACK -->
   <node pkg="lidar_cpp_pkg" exec="object_detector_pcl" name="detector_cpp_back" output="screen">
+    <param from="$(var config_dir)/detector_cpp.yaml"/>
+    <param name="use_sim_time" value="$(var use_sim_time)"/>
+
     <param name="input_topic" value="/back/cloud"/>
-    <param name="marker_topic" value="/cpp/back/detections"/>
-    <param name="target_frame" value="base_link"/>
-    <param name="publish_metrics" value="true"/>
-    <param name="metrics_prefix" value="/metrics/cpp/back"/>
-    <param name="tf_timeout_sec" value="0.2"/>
-    <param name="marker_lifetime_sec" value="0.5"/>
+    <param name="marker_topic" value="/detections/pcl/back"/>
+    <param name="metrics_prefix" value="/metrics/pcl/back"/>
   </node>
 
+  <!-- LEFT -->
   <node pkg="lidar_cpp_pkg" exec="object_detector_pcl" name="detector_cpp_left" output="screen">
+    <param from="$(var config_dir)/detector_cpp.yaml"/>
+    <param name="use_sim_time" value="$(var use_sim_time)"/>
+
     <param name="input_topic" value="/left/cloud"/>
-    <param name="marker_topic" value="/cpp/left/detections"/>
-    <param name="target_frame" value="base_link"/>
-    <param name="publish_metrics" value="true"/>
-    <param name="metrics_prefix" value="/metrics/cpp/left"/>
-    <param name="tf_timeout_sec" value="0.2"/>
-    <param name="marker_lifetime_sec" value="0.5"/>
+    <param name="marker_topic" value="/detections/pcl/left"/>
+    <param name="metrics_prefix" value="/metrics/pcl/left"/>
   </node>
 
   <!-- ================================= -->
   <!-- Algorithm B: Python DBSCAN (FUSED) -->
   <!-- ================================= -->
   <node pkg="lidar_py_pkg" exec="cloud_detector" name="detector_py_fused" output="screen">
-    <param name="input_topic" value="/nova/cloud_fused"/>
-    <param name="marker_topic" value="/py/fused/detections"/>
-    <param name="target_frame" value="base_link"/>
-    <param name="min_z" value="-0.2"/>
-    <param name="max_z" value="2.0"/>
-    <param name="voxel_size" value="0.05"/>
-    <param name="cluster_eps" value="0.40"/>
-    <param name="cluster_min_pts" value="20"/>
+    <param from="$(var config_dir)/dbscan_fused.yaml"/>
     <param name="use_sim_time" value="$(var use_sim_time)"/>
   </node>
 
@@ -122,6 +97,15 @@
   <!-- Bag playback          -->
   <!-- ===================== -->
   <executable cmd="ros2 bag play $(var bag_path) --clock --rate $(var bag_rate) --loop" output="screen"/>
+
+  <!-- ===================== -->
+  <!-- Metrics CSV logger    -->
+  <!-- ===================== -->
+  <node pkg="lidar_py_pkg" exec="metrics_csv_logger" name="metrics_csv_logger" output="screen">
+    <param name="use_sim_time" value="$(var use_sim_time)"/>
+    <param name="output_dir" value="$(env HOME)/lidar_ws/results"/>
+    <!-- If you omit 'topics', it auto-subscribes to ALL /metrics/* topics -->
+  </node>
 
   <!-- ===================== -->
   <!-- RViz                  -->

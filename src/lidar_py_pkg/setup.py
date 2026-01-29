@@ -26,6 +26,7 @@ setup(
             'cloud_fusion = lidar_py_pkg.cloud_fusion:main',
             'cloud_detector = lidar_py_pkg.cloud_detector:main',
             'plane_remove_o3d = lidar_py_pkg.plane_remove_o3d:main',
+            'metrics_csv_logger = lidar_py_pkg.metrics_csv_logger:main',
         ],
     },
 )
