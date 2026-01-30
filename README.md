@@ -152,9 +152,16 @@ source install/setup.bash
 After building and sourcing, run:
 
 ```bash
+#Replay
 pipenv run ros2 launch lidar_bringup live_fusion_detection.launch.xml \
-  bag_path:=/home/a-s/lidar_ws/bags/raw/bag_all_2026-01-15_14-21-44 \
+  play_bag:=true \
   use_sim_time:=true
+
+#Live
+pipenv run ros2 launch lidar_bringup live_fusion_detection.launch.xml \
+  play_bag:=false \
+  use_sim_time:=false
+
 ```
 
 You can change `bag_path` to any other recorded bag location.

@@ -4,6 +4,7 @@
   <!-- ================= -->
   <arg name="bag_path" default="/home/a-s/lidar_ws/bags/raw/bag_all_2026-01-15_14-21-44"/>
   <arg name="bag_rate" default="1.0"/>
+  <arg name="play_bag" default="true"/>
   <arg name="use_sim_time" default="true"/>
 
   <arg name="config_dir" default="$(find-pkg-share lidar_bringup)/config"/>
@@ -96,7 +97,11 @@
   <!-- ===================== -->
   <!-- Bag playback          -->
   <!-- ===================== -->
-  <executable cmd="ros2 bag play $(var bag_path) --clock --rate $(var bag_rate) --loop" output="screen"/>
+  <group if="$(var play_bag)">
+    <executable
+      cmd="ros2 bag play $(var bag_path) --clock --rate $(var bag_rate) --loop"
+      output="screen"/>
+  </group>
 
   <!-- ===================== -->
   <!-- Metrics CSV logger    -->
