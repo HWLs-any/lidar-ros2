@@ -2,14 +2,10 @@
   <!-- ================= -->
   <!-- User arguments    -->
   <!-- ================= -->
-  <arg name="bag_path" default="/home/a-s/lidar_ws/bags/raw/bag_all_2026-01-15_14-21-44"/>
-  <arg name="bag_rate" default="1.0"/>
-  <arg name="play_bag" default="true"/>
-  <arg name="use_sim_time" default="true"/>
+  <arg name="use_sim_time" default="false"/>
 
   <arg name="config_dir" default="$(find-pkg-share lidar_bringup)/config"/>
   <arg name="urdf_path" default="$(find-pkg-share lidar_description)/urdf/ship.urdf.xacro"/>
-  <arg name="rviz_config" default="$(find-pkg-share lidar_bringup)/rviz/bag_compare.rviz"/>
 
   <!-- ========================= -->
   <!-- Robot TF via URDF (xacro) -->
@@ -29,7 +25,6 @@
 
   <!-- ================================== -->
   <!-- Algorithm A: C++ PCL detector       -->
-  <!-- Base params from YAML, per-instance -->
   <!-- ================================== -->
 
   <!-- FUSED -->
@@ -41,13 +36,13 @@
     <param name="marker_topic" value="/detections/pcl/fused"/>
     <param name="metrics_prefix" value="/metrics/pcl/fused"/>
 
-    <!-- Fused-specific cropping (keeps your previous behavior) -->
+    <!-- Fused-specific cropping -->
     <param name="min_z" value="-0.2"/>
     <param name="max_z" value="2.0"/>
   </node>
 
   <!-- FRONT -->
-  <node pkg="lidar_cpp_pkg" exec="object_detector_pcl" name="detector_cpp_front" output="screen">
+  <node pkg="lidar_cpp_pkg" exec="object_detector_pcl" name="detector_cpp_front">
     <param from="$(var config_dir)/detector_cpp.yaml"/>
     <param name="use_sim_time" value="$(var use_sim_time)"/>
 
@@ -57,7 +52,7 @@
   </node>
 
   <!-- RIGHT -->
-  <node pkg="lidar_cpp_pkg" exec="object_detector_pcl" name="detector_cpp_right" output="screen">
+  <node pkg="lidar_cpp_pkg" exec="object_detector_pcl" name="detector_cpp_right">
     <param from="$(var config_dir)/detector_cpp.yaml"/>
     <param name="use_sim_time" value="$(var use_sim_time)"/>
 
@@ -67,7 +62,7 @@
   </node>
 
   <!-- BACK -->
-  <node pkg="lidar_cpp_pkg" exec="object_detector_pcl" name="detector_cpp_back" output="screen">
+  <node pkg="lidar_cpp_pkg" exec="object_detector_pcl" name="detector_cpp_back">
     <param from="$(var config_dir)/detector_cpp.yaml"/>
     <param name="use_sim_time" value="$(var use_sim_time)"/>
 
@@ -77,7 +72,7 @@
   </node>
 
   <!-- LEFT -->
-  <node pkg="lidar_cpp_pkg" exec="object_detector_pcl" name="detector_cpp_left" output="screen">
+  <node pkg="lidar_cpp_pkg" exec="object_detector_pcl" name="detector_cpp_left">
     <param from="$(var config_dir)/detector_cpp.yaml"/>
     <param name="use_sim_time" value="$(var use_sim_time)"/>
 
@@ -95,27 +90,11 @@
   </node>
 
   <!-- ===================== -->
-  <!-- Bag playback          -->
-  <!-- ===================== -->
-  <group if="$(var play_bag)">
-    <executable
-      cmd="ros2 bag play $(var bag_path) --clock --rate $(var bag_rate) --loop"
-      output="screen"/>
-  </group>
-
-  <!-- ===================== -->
   <!-- Metrics CSV logger    -->
   <!-- ===================== -->
   <node pkg="lidar_py_pkg" exec="metrics_csv_logger" name="metrics_csv_logger" output="screen">
     <param name="use_sim_time" value="$(var use_sim_time)"/>
     <param name="output_dir" value="$(env HOME)/lidar_ws/results"/>
-    <!-- If you omit 'topics', it auto-subscribes to ALL /metrics/* topics -->
   </node>
 
-  <!-- ===================== -->
-  <!-- RViz                  -->
-  <!-- ===================== -->
-  <node pkg="rviz2" exec="rviz2" name="rviz2" output="screen" args="-d $(var rviz_config)">
-    <param name="use_sim_time" value="$(var use_sim_time)"/>
-  </node>
 </launch>
