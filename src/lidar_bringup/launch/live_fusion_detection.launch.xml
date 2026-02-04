@@ -8,6 +8,52 @@
   <arg name="urdf_path" default="$(find-pkg-share lidar_description)/urdf/ship.urdf.xacro"/>
 
   <!-- ========================= -->
+  <!-- Launch live sensors       -->
+  <!-- ========================= -->
+  <!-- SICK MRS 6xxx drivers: one per sensor --> 
+  <!-- Note: set scanner_type to your exact model if needed, e.g., sick_mrs_6124 --> 
+  <node pkg="sick_scan_xd" exec="sick_generic_caller" name="front_driver" output="screen"> 
+    <param name="scanner_type" value="sick_mrs_6xxx"/> 
+    <param name="hostname" value="$(var front_ip)"/> 
+    <param name="frame_id" value="f_lidar_link"/> 
+    <param name="cloud_topic" value="/front/cloud"/> 
+    <param name="laserscan_topic" value="/front/scan"/> 
+    <param name="imu_topic" value="/front/imu"/> 
+    <param name="tf_publish_rate" value="0.0"/> 
+    <param name="use_binary_protocol" value="$(var use_binary_protocol)"/> 
+  </node> 
+  <node pkg="sick_scan_xd" exec="sick_generic_caller" name="right_driver" output="screen"> 
+    <param name="scanner_type" value="sick_mrs_6xxx"/> 
+    <param name="hostname" value="$(var right_ip)"/> 
+    <param name="frame_id" value="r_lidar_link"/> 
+    <param name="cloud_topic" value="/right/cloud"/> 
+    <param name="laserscan_topic" value="/right/scan"/> 
+    <param name="imu_topic" value="/right/imu"/> 
+    <param name="tf_publish_rate" value="0.0"/> 
+    <param name="use_binary_protocol" value="$(var use_binary_protocol)"/> 
+  </node> 
+  <node pkg="sick_scan_xd" exec="sick_generic_caller" name="back_driver" output="screen"> 
+    <param name="scanner_type" value="sick_mrs_6xxx"/> 
+    <param name="hostname" value="$(var back_ip)"/> 
+    <param name="frame_id" value="b_lidar_link"/> 
+    <param name="cloud_topic" value="/back/cloud"/> 
+    <param name="laserscan_topic" value="/back/scan"/> 
+    <param name="imu_topic" value="/back/imu"/> 
+    <param name="tf_publish_rate" value="0.0"/> 
+    <param name="use_binary_protocol" value="$(var use_binary_protocol)"/> 
+  </node> 
+  <node pkg="sick_scan_xd" exec="sick_generic_caller" name="left_driver" output="screen"> 
+    <param name="scanner_type" value="sick_mrs_6xxx"/> 
+    <param name="hostname" value="$(var left_ip)"/> 
+    <param name="frame_id" value="l_lidar_link"/> 
+    <param name="cloud_topic" value="/left/cloud"/> 
+    <param name="laserscan_topic" value="/left/scan"/> 
+    <param name="imu_topic" value="/left/imu"/> 
+    <param name="tf_publish_rate" value="0.0"/> 
+    <param name="use_binary_protocol" value="$(var use_binary_protocol)"/> 
+  </node>
+
+  <!-- ========================= -->
   <!-- Robot TF via URDF (xacro) -->
   <!-- ========================= -->
   <node pkg="robot_state_publisher" exec="robot_state_publisher" name="robot_state_publisher" output="screen">
