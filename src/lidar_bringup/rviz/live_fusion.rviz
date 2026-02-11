@@ -6,7 +6,6 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-        - /MarkerArray5
       Splitter Ratio: 0.5
     Tree Height: 707
   - Class: rviz_common/Selection
@@ -148,7 +147,7 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 327
+      Max Intensity: 65535
       Min Color: 0; 0; 0
       Min Intensity: 0
       Name: PointCloud2
@@ -181,7 +180,7 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 201
+      Max Intensity: 65535
       Min Color: 0; 0; 0
       Min Intensity: 0
       Name: PointCloud2
@@ -214,7 +213,7 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 337
+      Max Intensity: 65535
       Min Color: 0; 0; 0
       Min Intensity: 0
       Name: PointCloud2
@@ -247,7 +246,7 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 334
+      Max Intensity: 258
       Min Color: 0; 0; 0
       Min Intensity: 0
       Name: PointCloud2
@@ -266,53 +265,53 @@ Visualization Manager:
       Use rainbow: true
       Value: true
     - Class: rviz_default_plugins/MarkerArray
-      Enabled: true
+      Enabled: false
       Name: MarkerArray
       Namespaces:
-        pcl_detections: true
+        {}
       Topic:
         Depth: 5
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /detections/pcl/front
-      Value: true
+      Value: false
     - Class: rviz_default_plugins/MarkerArray
-      Enabled: true
+      Enabled: false
       Name: MarkerArray
       Namespaces:
-        pcl_detections: true
+        {}
       Topic:
         Depth: 5
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /detections/pcl/right
-      Value: true
+      Value: false
     - Class: rviz_default_plugins/MarkerArray
-      Enabled: true
+      Enabled: false
       Name: MarkerArray
       Namespaces:
-        pcl_detections: true
+        {}
       Topic:
         Depth: 5
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /detections/pcl/back
-      Value: true
+      Value: false
     - Class: rviz_default_plugins/MarkerArray
-      Enabled: true
+      Enabled: false
       Name: MarkerArray
       Namespaces:
-        pcl_detections: true
+        {}
       Topic:
         Depth: 5
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /detections/pcl/left
-      Value: true
+      Value: false
     - Class: rviz_default_plugins/MarkerArray
       Enabled: false
       Name: MarkerArray
@@ -326,6 +325,18 @@ Visualization Manager:
         Value: /detections/pcl/fused
       Value: false
     - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: MarkerArray
+      Namespaces:
+        detections: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /detections/dbscan/front
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
       Enabled: false
       Name: MarkerArray
       Namespaces:
@@ -335,7 +346,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /visualization_marker_array
+        Value: /detections/dbscan/right
       Value: false
     - Class: rviz_default_plugins/MarkerArray
       Enabled: false
@@ -347,7 +358,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: visualization_marker_array
+        Value: /detections/dbscan/back
       Value: false
     - Class: rviz_default_plugins/MarkerArray
       Enabled: false
@@ -359,7 +370,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: visualization_marker_array
+        Value: /detections/dbscan/left
       Value: false
     - Class: rviz_default_plugins/MarkerArray
       Enabled: false
@@ -371,19 +382,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: visualization_marker_array
-      Value: false
-    - Class: rviz_default_plugins/MarkerArray
-      Enabled: false
-      Name: MarkerArray
-      Namespaces:
-        {}
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: visualization_marker_array
+        Value: /detections/dbscan/fused
       Value: false
   Enabled: true
   Global Options:
@@ -431,7 +430,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 12.878292083740234
+      Distance: 13.772157669067383
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -446,10 +445,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.8953976035118103
+      Pitch: 0.970397412776947
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.09539960324764252
+      Yaw: 3.1335761547088623
     Saved: ~
 Window Geometry:
   Displays:
