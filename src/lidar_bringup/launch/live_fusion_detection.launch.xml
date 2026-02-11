@@ -25,6 +25,15 @@
   <arg name="cluster_eps" default="0.45"/>
   <arg name="cluster_min_pts" default="25"/>
 
+  <!-- BAG PATH and rviz -->
+  <arg name="bag_path" default="/home/a-s/lidar_ws/bags/outdoor_2026-02-04/S1_empty_14-06-15"/>
+  <arg name="bag_rate" default="0.5"/>
+  <arg name="play_bag" default="true"/>
+
+  <arg name="rviz_config" default="/home/a-s/lidar_ws/src/lidar_bringup/rviz/live_fusion.rviz"/>
+  <arg name="start_rviz" default="true"/>
+
+
   <!-- ========================= -->
   <!-- Launch live sensors       -->
   <!-- ========================= -->
@@ -234,5 +243,20 @@
     <param name="use_sim_time" value="$(var use_sim_time)"/>
     <param name="output_dir" value="$(env HOME)/lidar_ws/results"/>
   </node>
+
+  <!-- ===================== -->
+  <!-- Rviz and BAG    -->
+  <!-- ===================== -->
+  <group if="$(var start_rviz)">
+    <node pkg="rviz2" exec="rviz2" name="rviz2" output="screen"
+          args="-d $(var rviz_config)">
+      <param name="use_sim_time" value="true"/>
+    </node>
+  </group>
+  <group if="$(var play_bag)">
+  <executable
+    cmd="ros2 bag play $(var bag_path) --clock --loop --rate $(var bag_rate)"
+    output="screen"/>
+</group>
 
 </launch>
