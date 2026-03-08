@@ -10,8 +10,7 @@ cloud_fusion:
     publish_topic: /nova/cloud_fused
 
     voxel_size: 0.05
-    max_age_sec: 0.5
+    max_age_sec: 0.15
     publish_rate_hz: 10.0
 
     start_type_description_service: true
-
