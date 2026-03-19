@@ -1,0 +1,42 @@
+object_tracker:
+  ros__parameters:
+
+    # ── Input / Output topics ─────────────────────────────────────────
+    # Change input_topic to /detections/dbscan/fused to track DBSCAN instead
+    input_topic:  /detections/pcl/fused
+    output_topic: /tracks/markers
+    text_topic:   /tracks/text
+    vel_topic:    /tracks/velocity
+    target_frame: base_link
+
+    # ── Track lifecycle ───────────────────────────────────────────────
+    # min_hits:  how many consecutive matched frames before a track is
+    #            shown in RViz (filters single-frame false positives)
+    min_hits: 3
+
+    # max_misses: how many consecutive unmatched frames before a track
+    #             is deleted (higher = more robust to occlusion)
+    max_misses: 5
+
+    # max_match_dist: max distance in metres between predicted position
+    #                 and detection centroid to allow association
+    #                 Tune based on how fast objects move between frames
+    max_match_dist: 1.5
+
+    # ── Kalman filter tuning ──────────────────────────────────────────
+    # dt: time step in seconds — must match fusion rate (10 Hz = 0.1 s)
+    dt: 0.1
+
+    # process_noise: how much the model trusts its own velocity prediction
+    #   higher = trusts measurements more, tracks react faster but noisier
+    #   lower  = smoother tracks, slower to react to direction changes
+    process_noise: 0.5
+
+    # measure_noise: how noisy the bounding box centroid measurement is
+    #   higher = smoother but more lag
+    #   lower  = more responsive but may jitter
+    measure_noise: 0.3
+
+    # ── Visualisation ─────────────────────────────────────────────────
+    marker_lifetime_sec: 0.5
+    publish_velocity_arrows: true
