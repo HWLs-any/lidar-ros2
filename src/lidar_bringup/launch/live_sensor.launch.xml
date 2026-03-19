@@ -1,0 +1,279 @@
+<launch>
+  <!-- ================================================================ -->
+  <!-- live_sensors.launch.xml                                          -->
+  <!-- Purpose : Run the full pipeline on LIVE SICK MRS 6000 sensors   -->
+  <!-- Usage   : pipenv run ros2 launch lidar_bringup live_sensors.launch.xml -->
+  <!-- ================================================================ -->
+
+  <!-- ── Time: always false for live data (no simulated clock) ──── -->
+  <!-- NEVER set use_sim_time:=true here — RViz will freeze waiting  -->
+  <!-- for a /clock topic that does not exist on live sensors         -->
+  <arg name="use_sim_time"  default="false"/>
+  <arg name="target_frame"  default="base_link"/>
+
+  <!-- ── Paths ──────────────────────────────────────────────────── -->
+  <arg name="config_dir"  default="$(find-pkg-share lidar_bringup)/config"/>
+  <arg name="urdf_path"   default="$(find-pkg-share lidar_description)/urdf/ship.urdf.xacro"/>
+  <arg name="rviz_config" default="$(find-pkg-share lidar_bringup)/rviz/live_fusion.rviz"/>
+
+  <!-- ── Sensor IPs (lab network 169.254.254.x) ─────────────────── -->
+  <arg name="front_ip"  default="169.254.254.59"/>
+  <arg name="right_ip"  default="169.254.254.53"/>
+  <arg name="back_ip"   default="169.254.254.55"/>
+  <arg name="left_ip"   default="169.254.254.57"/>
+  <arg name="use_binary_protocol" default="true"/>
+
+  <!-- ── Topic names ────────────────────────────────────────────── -->
+  <arg name="front_topic"  default="/front/cloud"/>
+  <arg name="right_topic"  default="/right/cloud"/>
+  <arg name="back_topic"   default="/back/cloud"/>
+  <arg name="left_topic"   default="/left/cloud"/>
+  <arg name="fused_topic"  default="/nova/cloud_fused"/>
+
+  <!-- ── Optional nodes ─────────────────────────────────────────── -->
+  <arg name="start_rviz"   default="true"/>
+  <arg name="start_metrics" default="true"/>
+
+  <!-- ── DBSCAN parameters (tuned for lab indoor environment) ───── -->
+  <!-- Tighter than outdoor defaults — lab is smaller space          -->
+  <arg name="min_range"        default="0.3"/>
+  <arg name="max_range"        default="20.0"/>
+  <arg name="min_z"            default="-0.2"/>
+  <arg name="max_z"            default="2.0"/>
+  <arg name="voxel_size"       default="0.07"/>
+  <arg name="cluster_eps"      default="0.45"/>
+  <arg name="cluster_min_pts"  default="25"/>
+
+
+  <!-- ================================================================ -->
+  <!-- 1. SICK MRS 6000 Drivers — one per sensor                        -->
+  <!-- frame_id MUST match URDF link names exactly:                     -->
+  <!--   f_lidar_link / r_lidar_link / b_lidar_link / l_lidar_link      -->
+  <!-- ================================================================ -->
+  <node pkg="sick_scan_xd" exec="sick_generic_caller"
+        name="front_driver" output="screen">
+    <param name="scanner_type"        value="sick_mrs_6xxx"/>
+    <param name="hostname"            value="$(var front_ip)"/>
+    <param name="frame_id"            value="f_lidar_link"/>
+    <param name="cloud_topic"         value="$(var front_topic)"/>
+    <param name="laserscan_topic"     value="/front/scan"/>
+    <param name="imu_topic"           value="/front/imu"/>
+    <param name="tf_publish_rate"     value="0.0"/>
+    <param name="use_binary_protocol" value="$(var use_binary_protocol)"/>
+  </node>
+
+  <node pkg="sick_scan_xd" exec="sick_generic_caller"
+        name="right_driver" output="screen">
+    <param name="scanner_type"        value="sick_mrs_6xxx"/>
+    <param name="hostname"            value="$(var right_ip)"/>
+    <param name="frame_id"            value="r_lidar_link"/>
+    <param name="cloud_topic"         value="$(var right_topic)"/>
+    <param name="laserscan_topic"     value="/right/scan"/>
+    <param name="imu_topic"           value="/right/imu"/>
+    <param name="tf_publish_rate"     value="0.0"/>
+    <param name="use_binary_protocol" value="$(var use_binary_protocol)"/>
+  </node>
+
+  <node pkg="sick_scan_xd" exec="sick_generic_caller"
+        name="back_driver" output="screen">
+    <param name="scanner_type"        value="sick_mrs_6xxx"/>
+    <param name="hostname"            value="$(var back_ip)"/>
+    <param name="frame_id"            value="b_lidar_link"/>
+    <param name="cloud_topic"         value="$(var back_topic)"/>
+    <param name="laserscan_topic"     value="/back/scan"/>
+    <param name="imu_topic"           value="/back/imu"/>
+    <param name="tf_publish_rate"     value="0.0"/>
+    <param name="use_binary_protocol" value="$(var use_binary_protocol)"/>
+  </node>
+
+  <node pkg="sick_scan_xd" exec="sick_generic_caller"
+        name="left_driver" output="screen">
+    <param name="scanner_type"        value="sick_mrs_6xxx"/>
+    <param name="hostname"            value="$(var left_ip)"/>
+    <param name="frame_id"            value="l_lidar_link"/>
+    <param name="cloud_topic"         value="$(var left_topic)"/>
+    <param name="laserscan_topic"     value="/left/scan"/>
+    <param name="imu_topic"           value="/left/imu"/>
+    <param name="tf_publish_rate"     value="0.0"/>
+    <param name="use_binary_protocol" value="$(var use_binary_protocol)"/>
+  </node>
+
+
+  <!-- ================================================================ -->
+  <!-- 2. Robot TF — publishes fixed sensor→base_link transforms        -->
+  <!-- ================================================================ -->
+  <node pkg="robot_state_publisher" exec="robot_state_publisher"
+        name="robot_state_publisher" output="screen">
+    <param name="robot_description"
+           value="$(command 'xacro $(var urdf_path)')"/>
+    <param name="use_sim_time" value="false"/>
+  </node>
+
+
+  <!-- ================================================================ -->
+  <!-- 3. Fusion — merges all 4 clouds into /nova/cloud_fused           -->
+  <!-- ================================================================ -->
+  <node pkg="lidar_py_pkg" exec="cloud_fusion"
+        name="cloud_fusion" output="screen">
+    <param from="$(var config_dir)/fusion.yaml"/>
+    <param name="use_sim_time" value="false"/>
+  </node>
+
+
+  <!-- ================================================================ -->
+  <!-- 4a. DBSCAN — fused cloud                                         -->
+  <!-- ================================================================ -->
+  <node pkg="lidar_py_pkg" exec="cloud_detector"
+        name="dbscan_fused" output="screen">
+    <param name="use_sim_time"      value="false"/>
+    <param name="input_topic"       value="$(var fused_topic)"/>
+    <param name="marker_topic"      value="/detections/dbscan/fused"/>
+    <param name="target_frame"      value="$(var target_frame)"/>
+    <param name="min_range"         value="$(var min_range)"/>
+    <param name="max_range"         value="$(var max_range)"/>
+    <param name="min_z"             value="$(var min_z)"/>
+    <param name="max_z"             value="$(var max_z)"/>
+    <param name="voxel_size"        value="$(var voxel_size)"/>
+    <param name="cluster_eps"       value="$(var cluster_eps)"/>
+    <param name="cluster_min_pts"   value="$(var cluster_min_pts)"/>
+  </node>
+
+  <!-- ================================================================ -->
+  <!-- 4b. DBSCAN — per sensor (baseline comparison)                    -->
+  <!-- ================================================================ -->
+  <node pkg="lidar_py_pkg" exec="cloud_detector"
+        name="dbscan_front" output="screen">
+    <param name="use_sim_time"    value="false"/>
+    <param name="input_topic"     value="$(var front_topic)"/>
+    <param name="marker_topic"    value="/detections/dbscan/front"/>
+    <param name="target_frame"    value="$(var target_frame)"/>
+    <param name="min_range"       value="$(var min_range)"/>
+    <param name="max_range"       value="$(var max_range)"/>
+    <param name="min_z"           value="$(var min_z)"/>
+    <param name="max_z"           value="$(var max_z)"/>
+    <param name="voxel_size"      value="$(var voxel_size)"/>
+    <param name="cluster_eps"     value="$(var cluster_eps)"/>
+    <param name="cluster_min_pts" value="$(var cluster_min_pts)"/>
+  </node>
+
+  <node pkg="lidar_py_pkg" exec="cloud_detector"
+        name="dbscan_right" output="screen">
+    <param name="use_sim_time"    value="false"/>
+    <param name="input_topic"     value="$(var right_topic)"/>
+    <param name="marker_topic"    value="/detections/dbscan/right"/>
+    <param name="target_frame"    value="$(var target_frame)"/>
+    <param name="min_range"       value="$(var min_range)"/>
+    <param name="max_range"       value="$(var max_range)"/>
+    <param name="min_z"           value="$(var min_z)"/>
+    <param name="max_z"           value="$(var max_z)"/>
+    <param name="voxel_size"      value="$(var voxel_size)"/>
+    <param name="cluster_eps"     value="$(var cluster_eps)"/>
+    <param name="cluster_min_pts" value="$(var cluster_min_pts)"/>
+  </node>
+
+  <node pkg="lidar_py_pkg" exec="cloud_detector"
+        name="dbscan_back" output="screen">
+    <param name="use_sim_time"    value="false"/>
+    <param name="input_topic"     value="$(var back_topic)"/>
+    <param name="marker_topic"    value="/detections/dbscan/back"/>
+    <param name="target_frame"    value="$(var target_frame)"/>
+    <param name="min_range"       value="$(var min_range)"/>
+    <param name="max_range"       value="$(var max_range)"/>
+    <param name="min_z"           value="$(var min_z)"/>
+    <param name="max_z"           value="$(var max_z)"/>
+    <param name="voxel_size"      value="$(var voxel_size)"/>
+    <param name="cluster_eps"     value="$(var cluster_eps)"/>
+    <param name="cluster_min_pts" value="$(var cluster_min_pts)"/>
+  </node>
+
+  <node pkg="lidar_py_pkg" exec="cloud_detector"
+        name="dbscan_left" output="screen">
+    <param name="use_sim_time"    value="false"/>
+    <param name="input_topic"     value="$(var left_topic)"/>
+    <param name="marker_topic"    value="/detections/dbscan/left"/>
+    <param name="target_frame"    value="$(var target_frame)"/>
+    <param name="min_range"       value="$(var min_range)"/>
+    <param name="max_range"       value="$(var max_range)"/>
+    <param name="min_z"           value="$(var min_z)"/>
+    <param name="max_z"           value="$(var max_z)"/>
+    <param name="voxel_size"      value="$(var voxel_size)"/>
+    <param name="cluster_eps"     value="$(var cluster_eps)"/>
+    <param name="cluster_min_pts" value="$(var cluster_min_pts)"/>
+  </node>
+
+
+  <!-- ================================================================ -->
+  <!-- 5. C++ PCL detector — fused + per sensor                         -->
+  <!-- ================================================================ -->
+  <node pkg="lidar_cpp_pkg" exec="object_detector_pcl"
+        name="detector_cpp_fused" output="screen">
+    <param from="$(var config_dir)/detector_cpp.yaml"/>
+    <param name="use_sim_time"    value="false"/>
+    <param name="input_topic"     value="/nova/cloud_fused"/>
+    <param name="marker_topic"    value="/detections/pcl/fused"/>
+    <param name="metrics_prefix"  value="/metrics/pcl/fused"/>
+    <param name="min_z"           value="-0.2"/>
+    <param name="max_z"           value="2.0"/>
+  </node>
+
+  <node pkg="lidar_cpp_pkg" exec="object_detector_pcl"
+        name="detector_cpp_front" output="screen">
+    <param from="$(var config_dir)/detector_cpp.yaml"/>
+    <param name="use_sim_time"    value="false"/>
+    <param name="input_topic"     value="$(var front_topic)"/>
+    <param name="marker_topic"    value="/detections/pcl/front"/>
+    <param name="metrics_prefix"  value="/metrics/pcl/front"/>
+  </node>
+
+  <node pkg="lidar_cpp_pkg" exec="object_detector_pcl"
+        name="detector_cpp_right" output="screen">
+    <param from="$(var config_dir)/detector_cpp.yaml"/>
+    <param name="use_sim_time"    value="false"/>
+    <param name="input_topic"     value="$(var right_topic)"/>
+    <param name="marker_topic"    value="/detections/pcl/right"/>
+    <param name="metrics_prefix"  value="/metrics/pcl/right"/>
+  </node>
+
+  <node pkg="lidar_cpp_pkg" exec="object_detector_pcl"
+        name="detector_cpp_back" output="screen">
+    <param from="$(var config_dir)/detector_cpp.yaml"/>
+    <param name="use_sim_time"    value="false"/>
+    <param name="input_topic"     value="$(var back_topic)"/>
+    <param name="marker_topic"    value="/detections/pcl/back"/>
+    <param name="metrics_prefix"  value="/metrics/pcl/back"/>
+  </node>
+
+  <node pkg="lidar_cpp_pkg" exec="object_detector_pcl"
+        name="detector_cpp_left" output="screen">
+    <param from="$(var config_dir)/detector_cpp.yaml"/>
+    <param name="use_sim_time"    value="false"/>
+    <param name="input_topic"     value="$(var left_topic)"/>
+    <param name="marker_topic"    value="/detections/pcl/left"/>
+    <param name="metrics_prefix"  value="/metrics/pcl/left"/>
+  </node>
+
+
+  <!-- ================================================================ -->
+  <!-- 6. Metrics CSV logger                                             -->
+  <!-- ================================================================ -->
+  <group if="$(var start_metrics)">
+    <node pkg="lidar_py_pkg" exec="metrics_csv_logger"
+          name="metrics_csv_logger" output="screen">
+      <param name="use_sim_time" value="false"/>
+      <param name="output_dir"   value="$(env HOME)/lidar_ws/results"/>
+    </node>
+  </group>
+
+
+  <!-- ================================================================ -->
+  <!-- 7. RViz                                                           -->
+  <!-- use_sim_time MUST be false here — no /clock on live data         -->
+  <!-- ================================================================ -->
+  <group if="$(var start_rviz)">
+    <node pkg="rviz2" exec="rviz2" name="rviz2" output="screen"
+          args="-d $(var rviz_config)">
+      <param name="use_sim_time" value="false"/>
+    </node>
+  </group>
+
+</launch>
