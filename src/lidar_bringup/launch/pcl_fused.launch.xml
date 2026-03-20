@@ -1,0 +1,146 @@
+<launch>
+  <!-- ================================================================ -->
+  <!-- pcl_fused_no_tracker.launch.xml                                  -->
+  <!-- Purpose : C++ PCL detector on fused cloud only                  -->
+  <!-- Runs   : 4 drivers + TF + fusion + 1 PCL fused detector         -->
+  <!--          + metrics + RViz                                        -->
+  <!-- NO per-sensor detection, NO DBSCAN, NO tracker                 -->
+  <!-- Usage  : pipenv run ros2 launch lidar_bringup pcl_fused_no_tracker.launch.xml -->
+  <!-- ================================================================ -->
+
+  <arg name="use_sim_time"  default="false"/>
+  <arg name="target_frame"  default="base_link"/>
+
+  <arg name="config_dir"  default="$(find-pkg-share lidar_bringup)/config"/>
+  <arg name="urdf_path"   default="$(find-pkg-share lidar_description)/urdf/ship.urdf.xacro"/>
+  <arg name="rviz_config" default="$(find-pkg-share lidar_bringup)/rviz/live_fusion.rviz"/>
+
+  <!-- Sensor IPs -->
+  <arg name="front_ip"            default="169.254.254.59"/>
+  <arg name="right_ip"            default="169.254.254.53"/>
+  <arg name="back_ip"             default="169.254.254.55"/>
+  <arg name="left_ip"             default="169.254.254.57"/>
+  <arg name="use_binary_protocol" default="true"/>
+
+  <!-- Topic names -->
+  <arg name="front_topic" default="/front/cloud"/>
+  <arg name="right_topic" default="/right/cloud"/>
+  <arg name="back_topic"  default="/back/cloud"/>
+  <arg name="left_topic"  default="/left/cloud"/>
+  <arg name="fused_topic" default="/nova/cloud_fused"/>
+
+  <!-- Optional nodes -->
+  <arg name="start_rviz"    default="true"/>
+  <arg name="start_metrics" default="true"/>
+
+  <!-- ================================================================ -->
+  <!-- 1. SICK MRS 6000 Drivers                                         -->
+  <!-- ================================================================ -->
+  <node pkg="sick_scan_xd" exec="sick_generic_caller"
+        name="front_driver" output="screen">
+    <param name="scanner_type"        value="sick_mrs_6xxx"/>
+    <param name="hostname"            value="$(var front_ip)"/>
+    <param name="frame_id"            value="f_lidar_link"/>
+    <param name="cloud_topic"         value="$(var front_topic)"/>
+    <param name="laserscan_topic"     value="/front/scan"/>
+    <param name="imu_topic"           value="/front/imu"/>
+    <param name="tf_publish_rate"     value="0.0"/>
+    <param name="use_binary_protocol" value="$(var use_binary_protocol)"/>
+  </node>
+
+  <node pkg="sick_scan_xd" exec="sick_generic_caller"
+        name="right_driver" output="screen">
+    <param name="scanner_type"        value="sick_mrs_6xxx"/>
+    <param name="hostname"            value="$(var right_ip)"/>
+    <param name="frame_id"            value="r_lidar_link"/>
+    <param name="cloud_topic"         value="$(var right_topic)"/>
+    <param name="laserscan_topic"     value="/right/scan"/>
+    <param name="imu_topic"           value="/right/imu"/>
+    <param name="tf_publish_rate"     value="0.0"/>
+    <param name="use_binary_protocol" value="$(var use_binary_protocol)"/>
+  </node>
+
+  <node pkg="sick_scan_xd" exec="sick_generic_caller"
+        name="back_driver" output="screen">
+    <param name="scanner_type"        value="sick_mrs_6xxx"/>
+    <param name="hostname"            value="$(var back_ip)"/>
+    <param name="frame_id"            value="b_lidar_link"/>
+    <param name="cloud_topic"         value="$(var back_topic)"/>
+    <param name="laserscan_topic"     value="/back/scan"/>
+    <param name="imu_topic"           value="/back/imu"/>
+    <param name="tf_publish_rate"     value="0.0"/>
+    <param name="use_binary_protocol" value="$(var use_binary_protocol)"/>
+  </node>
+
+  <node pkg="sick_scan_xd" exec="sick_generic_caller"
+        name="left_driver" output="screen">
+    <param name="scanner_type"        value="sick_mrs_6xxx"/>
+    <param name="hostname"            value="$(var left_ip)"/>
+    <param name="frame_id"            value="l_lidar_link"/>
+    <param name="cloud_topic"         value="$(var left_topic)"/>
+    <param name="laserscan_topic"     value="/left/scan"/>
+    <param name="imu_topic"           value="/left/imu"/>
+    <param name="tf_publish_rate"     value="0.0"/>
+    <param name="use_binary_protocol" value="$(var use_binary_protocol)"/>
+  </node>
+
+
+  <!-- ================================================================ -->
+  <!-- 2. Robot TF                                                       -->
+  <!-- ================================================================ -->
+  <node pkg="robot_state_publisher" exec="robot_state_publisher"
+        name="robot_state_publisher" output="screen">
+    <param name="robot_description"
+           value="$(command 'xacro $(var urdf_path)')"/>
+    <param name="use_sim_time" value="false"/>
+  </node>
+
+
+  <!-- ================================================================ -->
+  <!-- 3. Fusion                                                         -->
+  <!-- ================================================================ -->
+  <node pkg="lidar_py_pkg" exec="cloud_fusion"
+        name="cloud_fusion" output="screen">
+    <param from="$(var config_dir)/fusion.yaml"/>
+    <param name="use_sim_time" value="false"/>
+  </node>
+
+
+  <!-- ================================================================ -->
+  <!-- 4. C++ PCL detector — fused cloud only                           -->
+  <!-- ================================================================ -->
+  <node pkg="lidar_cpp_pkg" exec="object_detector_pcl"
+        name="detector_cpp_fused" output="screen">
+    <param from="$(var config_dir)/detector_cpp.yaml"/>
+    <param name="use_sim_time"   value="false"/>
+    <param name="input_topic"    value="$(var fused_topic)"/>
+    <param name="marker_topic"   value="/detections/pcl/fused"/>
+    <param name="metrics_prefix" value="/metrics/pcl/fused"/>
+    <param name="min_z"          value="-0.2"/>
+    <param name="max_z"          value="2.0"/>
+  </node>
+
+
+  <!-- ================================================================ -->
+  <!-- 5. Metrics CSV logger                                             -->
+  <!-- ================================================================ -->
+  <group if="$(var start_metrics)">
+    <node pkg="lidar_py_pkg" exec="metrics_csv_logger"
+          name="metrics_csv_logger" output="screen">
+      <param name="use_sim_time" value="false"/>
+      <param name="output_dir"   value="$(env HOME)/lidar_ws/results"/>
+    </node>
+  </group>
+
+
+  <!-- ================================================================ -->
+  <!-- 6. RViz                                                           -->
+  <!-- ================================================================ -->
+  <group if="$(var start_rviz)">
+    <node pkg="rviz2" exec="rviz2" name="rviz2" output="screen"
+          args="-d $(var rviz_config)">
+      <param name="use_sim_time" value="false"/>
+    </node>
+  </group>
+
+</launch>

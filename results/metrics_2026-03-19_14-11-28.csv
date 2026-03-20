@@ -1,0 +1,16 @@
+stamp_sec,topic,type,value
+1773925917.6978593,/metrics/pcl/left/detections_count,std_msgs/msg/Int32,22
+1773925917.698052,/metrics/pcl/left/points_in,std_msgs/msg/Int32,22152
+1773925917.6981657,/metrics/pcl/left/processing_ms,std_msgs/msg/Float32,238.98434448242188
+1773925917.9155674,/metrics/pcl/left/detections_count,std_msgs/msg/Int32,22
+1773925917.9158056,/metrics/pcl/left/points_in,std_msgs/msg/Int32,22152
+1773925917.91597,/metrics/pcl/left/processing_ms,std_msgs/msg/Float32,216.28392028808594
+1773925918.1345203,/metrics/pcl/left/detections_count,std_msgs/msg/Int32,21
+1773925918.1347806,/metrics/pcl/left/points_in,std_msgs/msg/Int32,22152
+1773925918.134989,/metrics/pcl/left/processing_ms,std_msgs/msg/Float32,218.19155883789062
+1773925918.3506196,/metrics/pcl/left/detections_count,std_msgs/msg/Int32,21
+1773925918.3508718,/metrics/pcl/left/points_in,std_msgs/msg/Int32,22152
+1773925918.351068,/metrics/pcl/left/processing_ms,std_msgs/msg/Float32,215.1808624267578
+1773925918.5691755,/metrics/pcl/left/detections_count,std_msgs/msg/Int32,20
+1773925918.5694351,/metrics/pcl/left/points_in,std_msgs/msg/Int32,22152
+1773925918.569635,/metrics/pcl/left/processing_ms,std_msgs/msg/Float32,217.689453125

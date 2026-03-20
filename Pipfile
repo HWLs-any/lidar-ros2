@@ -12,6 +12,7 @@ pyyaml = "*"
 empy = "*"
 catkin-pkg = "*"
 scipy = "*"
+flask = "*"
 
 [dev-packages]
 
