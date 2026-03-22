@@ -1,0 +1,4 @@
+stamp_sec,topic,type,value
+1774022066.796434,/metrics/pcl/fused/detections_count,std_msgs/msg/Int32,37
+1774022066.7966416,/metrics/pcl/fused/points_in,std_msgs/msg/Int32,20067
+1774022066.7967973,/metrics/pcl/fused/processing_ms,std_msgs/msg/Float32,138.92288208007812
