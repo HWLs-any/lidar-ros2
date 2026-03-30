@@ -1,0 +1,57 @@
+📊 LiDAR Metrics Summary Report
+Generated: 2026-03-26 13:40:27
+============================================================
+
+Total Records: 11,073
+Configurations: ['PCL', 'DBSCAN']
+Sensors: ['fused', 'front', 'right', 'left', 'back']
+Metrics: ['detections_count', 'points_in', 'processing_ms']
+
+
+🔧 Configuration: PCL
+----------------------------------------
+
+📈 processing_ms:
+   • fused   : mean=  135.40, std=   24.18, n=209
+   • front   : mean=  123.82, std=   22.89, n=386
+   • right   : mean=  117.28, std=   20.43, n=407
+   • left    : mean=  139.39, std=   24.31, n=339
+   • back    : mean=   98.24, std=   13.57, n=447
+
+📈 detections_count:
+   • fused   : mean=   75.17, std=   10.36, n=209
+   • front   : mean=   27.05, std=    3.12, n=386
+   • right   : mean=   27.60, std=    3.52, n=407
+   • left    : mean=   30.90, std=    2.57, n=339
+   • back    : mean=   34.53, std=    2.88, n=447
+
+📈 points_in:
+   • fused   : mean=39225.40, std= 5532.21, n=209
+   • front   : mean=22152.00, std=    0.00, n=386
+   • right   : mean=22152.00, std=    0.00, n=407
+   • left    : mean=22152.00, std=    0.00, n=339
+   • back    : mean=22152.00, std=    0.00, n=447
+
+🔧 Configuration: DBSCAN
+----------------------------------------
+
+📈 processing_ms:
+   • fused   : mean=  156.34, std=   28.11, n=77
+   • front   : mean=   80.78, std=   15.40, n=468
+   • right   : mean=   87.96, std=   16.55, n=457
+   • left    : mean=   90.12, std=   15.31, n=449
+   • back    : mean=   68.92, std=   11.84, n=452
+
+📈 detections_count:
+   • fused   : mean=   31.16, std=    4.27, n=77
+   • front   : mean=   12.12, std=    1.13, n=468
+   • right   : mean=   10.02, std=    1.24, n=457
+   • left    : mean=   11.34, std=    0.69, n=449
+   • back    : mean=   10.54, std=    0.93, n=452
+
+📈 points_in:
+   • fused   : mean=11468.90, std= 1852.45, n=77
+   • front   : mean= 6402.79, std=  951.15, n=468
+   • right   : mean= 7165.51, std=  889.11, n=457
+   • left    : mean= 8055.04, std=  724.41, n=449
+   • back    : mean= 4604.60, std=  675.73, n=452
